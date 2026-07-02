@@ -1,5 +1,7 @@
 # Stargardt / OSK Reprogramming Methylation Reanalysis
 
+**See [WRITEUP.md](WRITEUP.md) for the full writeup of methods and results.**
+
 ## Disclaimer
 
 **This is an independent reanalysis of a publicly deposited dataset, not a
