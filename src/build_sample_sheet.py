@@ -5,6 +5,7 @@ Parse the GSE147436 series matrix header and build:
 
 Run from repo root: .venv/bin/python src/build_sample_sheet.py
 """
+import gzip
 import re
 from pathlib import Path
 
@@ -12,7 +13,7 @@ import pandas as pd
 
 RAW_DIR = Path("data/raw")
 OUT_DIR = Path("data/processed")
-SERIES_MATRIX = RAW_DIR / "GSE147436_series_matrix.txt"
+SERIES_MATRIX = RAW_DIR / "GSE147436_series_matrix.txt.gz"
 
 
 def parse_header_field(lines, field_name):
@@ -24,7 +25,7 @@ def parse_header_field(lines, field_name):
 
 
 def main():
-    with open(SERIES_MATRIX, encoding="utf-8", errors="replace") as f:
+    with gzip.open(SERIES_MATRIX, "rt", encoding="utf-8", errors="replace") as f:
         header_lines = []
         for line in f:
             if line.startswith("!series_matrix_table_begin"):
@@ -42,7 +43,9 @@ def main():
     osk = [v.strip('"').replace("osk: ", "") for v in char_lines[1].rstrip("\n").split("\t")[1:]]
     timepoint = [v.strip('"').replace("status/time point: ", "") for v in char_lines[2].rstrip("\n").split("\t")[1:]]
 
-    sentrix_id = [d.split("_")[0] for d in description]
+    # GEO's metadata prefixes barcodes with "X" (an R artifact); the actual
+    # IDAT filenames on disk do not have this prefix, so strip it.
+    sentrix_id = [d.split("_")[0].lstrip("X") for d in description]
     sentrix_position = [d.split("_")[1] for d in description]
 
     df = pd.DataFrame({
@@ -62,8 +65,15 @@ def main():
     print(f"Wrote {out_path} ({len(df)} samples)")
     print(df.to_string(index=False))
 
-    # Cross-check against files actually on disk
+    # methylprep looks for a sample sheet CSV sitting alongside the IDAT
+    # files themselves (Sample_Name, Sentrix_ID, Sentrix_Position columns
+    # are required), so write a copy there too.
     idat_dir = RAW_DIR / "idat"
+    methylprep_sheet_path = idat_dir / "samplesheet.csv"
+    df.to_csv(methylprep_sheet_path, index=False)
+    print(f"Wrote {methylprep_sheet_path} (for methylprep to auto-detect)")
+
+    # Cross-check against files actually on disk
     on_disk = sorted(idat_dir.glob("*.idat.gz"))
     print(f"\n{len(on_disk)} IDAT files found on disk ({len(on_disk)//2} sample pairs expected: {len(df)})")
 

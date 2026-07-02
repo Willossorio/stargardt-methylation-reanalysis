@@ -69,7 +69,26 @@ python src/build_sample_sheet.py
 - [x] Python environment + requirements
 - [x] Raw data downloaded and verified (24 samples, EPIC array, IDATs + processed beta matrix)
 - [x] Sample sheet built and cross-checked against files on disk
-- [ ] IDAT preprocessing pipeline (background/dye-bias correction, normalization)
-- [ ] Epigenetic age estimation (Horvath skin & blood clock)
-- [ ] Statistical comparison across OSK / timepoint groups
+- [x] IDAT preprocessing pipeline (background/dye-bias correction, normalization) via `methylprep`
+- [x] Epigenetic age estimation (Horvath skin & blood clock)
+- [x] Statistical comparison across OSK / timepoint groups
 - [ ] Writeup
+
+See [docs/results_summary.md](docs/results_summary.md) for findings so far.
+
+### A note on the Python environment
+
+`methylprep` (last released 2023) depends on pandas/numpy APIs that were
+removed in newer releases, and no compatible old version of those libraries
+has a prebuilt wheel for very new Pythons. This project therefore pins its
+virtual environment to **Python 3.11** (installed via
+[`uv`](https://docs.astral.sh/uv/), which manages this independently of
+your system Python) rather than whatever Python you may have installed
+system-wide:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv python install 3.11
+uv venv --python 3.11 .venv
+uv pip install --python .venv/bin/python -r requirements.txt
+```
